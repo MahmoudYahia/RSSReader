@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:background="@android:color/white">
+
+    <android.support.v4.widget.SwipeRefreshLayout
+        android:id="@+id/home_swipe_layout"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        tools:visibility="gone"
+        >
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <android.support.v7.widget.RecyclerView
+                android:id="@+id/providers_recycler"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content" />
+
+            <android.support.design.widget.FloatingActionButton
+                android:id="@+id/home_add_provider_btn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end|bottom|center"
+                android:layout_marginEnd="12dp"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/circle_background_white"
+                android:backgroundTint="@color/colorPrimary"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_add_white"
+                app:fabSize="normal" />
+        </FrameLayout>
+
+
+    </android.support.v4.widget.SwipeRefreshLayout>
+
+    <FrameLayout
+        android:id="@+id/category_list_content_frame"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        tools:visibility="gone">
+
+        <include layout="@layout/categories_list_layout" />
+    </FrameLayout>
+
+    <FrameLayout
+        android:id="@+id/category_sources_content_frame"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        tools:visibility="gone">
+
+        <include layout="@layout/category_sources_layout" />
+    </FrameLayout>
+
+</FrameLayout>
