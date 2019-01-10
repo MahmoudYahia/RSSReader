@@ -22,11 +22,15 @@ public interface DetailContract {
         void showWebViewLayout(boolean z);
 
         void startToLoadWepPage(String str);
+
+        void shareToPocket(String url);
     }
 
     public interface Presenter extends BaseContract.Presenter {
         void onViewAllArticleClicked();
 
         void onWebViewBackClicked();
+
+        void onSharePocketClicked();
     }
 }

@@ -1,5 +1,7 @@
 package co.myahia.rssreader.features.detail;
 
+import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -41,6 +43,8 @@ public class DetailFragment extends Fragment implements DetailContract.View {
     WebView webView;
     @BindView(R.id.web_view_content_layout)
     ViewGroup webViewContentFrame;
+
+
 
     private boolean isFirstLoad = true;
     private DetailContract.Presenter mPresenter;
@@ -125,6 +129,24 @@ public class DetailFragment extends Fragment implements DetailContract.View {
         this.isFirstLoad = false;
     }
 
+    @Override
+    public void shareToPocket(String url) {
+        Intent intent = new Intent(android.content.Intent.ACTION_SEND);
+        intent.setType("text/plain");
+
+        if (getActivity() != null)
+            if (getActivity().getPackageManager() != null) {
+                PackageManager pm = getActivity().getPackageManager();
+                try {
+                    pm.getPackageInfo("com.ideashower.readitlater.pro", PackageManager.GET_ACTIVITIES);
+                    intent.putExtra(Intent.EXTRA_TEXT, url);
+                    startActivity(intent);
+                } catch (PackageManager.NameNotFoundException e) {
+                    // Pocket app not installed
+                }
+            }
+    }
+
     public void showDetailLayout(boolean isShowing) {
         if (isShowing) {
             detailsContentLayout.setX(detailsContentLayout.getWidth());
@@ -162,4 +184,10 @@ public class DetailFragment extends Fragment implements DetailContract.View {
         super.onStop();
         mPresenter.onStop();
     }
+
+    @OnClick(R.id.share_pocket_btn)
+    public void onSharePockeetClicked(){
+        mPresenter.onSharePocketClicked();
+    }
+
 }

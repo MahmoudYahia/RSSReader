@@ -156,7 +156,6 @@ public class HomeFragment extends Fragment implements HomeContract.View,
 
     @OnClick(R.id.category_sources_back_btn)
     public void onSourcesBackClicked() {
-
     }
 
     @OnClick(R.id.category_sources_ok_btn)

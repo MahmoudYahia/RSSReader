@@ -28,6 +28,11 @@ public class DetailPresenter implements Presenter {
         this.mDetailView.showDetailLayout(true);
     }
 
+    @Override
+    public void onSharePocketClicked() {
+        mDetailView.shareToPocket(mApiArticle.getUrl());
+    }
+
     public void onStart() {
         if (this.mApiArticle != null) {
             setArticleDetails();
@@ -44,6 +49,7 @@ public class DetailPresenter implements Presenter {
     }
 
     public void onStop() {
+
     }
 
     @Inject

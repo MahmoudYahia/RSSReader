@@ -55,14 +55,17 @@ public class HomePresenter implements Presenter {
 
     private void classifyArticles(List<ApiArticle> list) {
         for (ApiArticle apiArticle : list) {
-            if (!(apiArticle.getSource() == null || apiArticle.getSource().getId() == null)) {
-                if (articlesMap.containsKey(apiArticle.getSource().getId())) {
-                    articlesMap.get(apiArticle.getSource().getId()).add(apiArticle);
-                } else {
-                    this.articlesMap.put(apiArticle.getSource().getId(), new ArrayList());
-                    (articlesMap.get(apiArticle.getSource().getId())).add(apiArticle);
+            if (apiArticle.getUrl() != null) {
+                if (!(apiArticle.getSource() == null || apiArticle.getSource().getId() == null)) {
+                    if (articlesMap.containsKey(apiArticle.getSource().getId())) {
+                        articlesMap.get(apiArticle.getSource().getId()).add(apiArticle);
+                    } else {
+                        this.articlesMap.put(apiArticle.getSource().getId(), new ArrayList());
+                        (articlesMap.get(apiArticle.getSource().getId())).add(apiArticle);
+                    }
                 }
             }
+
         }
         setAdaptersData(articlesMap);
     }
