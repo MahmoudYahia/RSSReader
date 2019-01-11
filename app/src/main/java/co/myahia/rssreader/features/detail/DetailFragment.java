@@ -180,6 +180,11 @@ public class DetailFragment extends Fragment implements DetailContract.View {
     public void showLoading(boolean isShowing) {
     }
 
+    @Override
+    public boolean isActive() {
+        return false;
+    }
+
     public void onStop() {
         super.onStop();
         mPresenter.onStop();

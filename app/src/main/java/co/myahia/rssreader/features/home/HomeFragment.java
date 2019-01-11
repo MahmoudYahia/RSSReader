@@ -91,6 +91,14 @@ public class HomeFragment extends Fragment implements HomeContract.View,
         return view;
     }
 
+    @Override
+    public void onStart() {
+        super.onStart();
+        mPresenter.onStart();
+    }
+
+
+
     private void displaySettings() {
         Display mdisp = getActivity().getWindowManager().getDefaultDisplay();
         Point mdispSize = new Point();
@@ -168,6 +176,11 @@ public class HomeFragment extends Fragment implements HomeContract.View,
     }
 
     public void showLoading(boolean isShowing) {
+    }
+
+    @Override
+    public boolean isActive() {
+        return isAdded();
     }
 
     public void setAdapterDate(HashMap<String, List<ApiArticle>> listHashMap) {

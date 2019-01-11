@@ -8,11 +8,14 @@ public interface BaseContract {
         void onStop();
 
         void setViewPresenter();
+
     }
 
     public interface View<T> {
         void setPresenter(T t);
 
-        void showLoading(boolean z);
+        void showLoading(boolean showing);
+
+        boolean isActive();
     }
 }

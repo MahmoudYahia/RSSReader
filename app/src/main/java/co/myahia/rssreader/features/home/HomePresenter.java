@@ -5,6 +5,7 @@ import android.util.Log;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
@@ -13,12 +14,17 @@ import co.myahia.rssreader.data.remote.model.NewsProvider;
 import co.myahia.rssreader.data.remote.model.enumes.CategoryType;
 import co.myahia.rssreader.features.home.HomeContract.Presenter;
 import co.myahia.rssreader.features.home.HomeContract.View;
+import io.reactivex.Completable;
+import io.reactivex.CompletableObserver;
+import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
 
 public class HomePresenter implements Presenter {
     private HashMap<String, List<ApiArticle>> articlesMap;
+    private HashMap<String, List<ApiArticle>> tempArticles;
     private List<String> defRes;
     private HomeContract.Data mHomeData;
 
@@ -27,10 +33,12 @@ public class HomePresenter implements Presenter {
 
     @Inject
     public HomePresenter(View view, HomeContract.Data data) {
+
         mHomeView = view;
         mHomeData = data;
-        articlesMap = new HashMap();
-        defRes = new ArrayList();
+        articlesMap = new HashMap<>();
+       // tempArticles = new HashMap<>();
+        defRes = new ArrayList<>();
         mDisposable = new CompositeDisposable();
         this.defRes.add("bbc-news");
         this.defRes.add("techcrunch");
@@ -41,6 +49,7 @@ public class HomePresenter implements Presenter {
     public void onStart() {
         if (articlesMap.size() == 0) {
             getArticles();
+            counter();
         }
     }
 
@@ -53,26 +62,29 @@ public class HomePresenter implements Presenter {
         mDisposable.clear();
     }
 
-    private void classifyArticles(List<ApiArticle> list) {
-        for (ApiArticle apiArticle : list) {
-            if (apiArticle.getUrl() != null) {
-                if (!(apiArticle.getSource() == null || apiArticle.getSource().getId() == null)) {
-                    if (articlesMap.containsKey(apiArticle.getSource().getId())) {
-                        articlesMap.get(apiArticle.getSource().getId()).add(apiArticle);
-                    } else {
-                        this.articlesMap.put(apiArticle.getSource().getId(), new ArrayList());
-                        (articlesMap.get(apiArticle.getSource().getId())).add(apiArticle);
-                    }
-                }
-            }
 
-        }
+    private void classifyArticles(List<ApiArticle> list) {
+        Observable.just(list)
+                .flatMapIterable(apiArticles -> apiArticles)
+                .filter(apiArticle -> apiArticle.getSource().getId() != null)
+                .toList()
+                .subscribe(apiArticles -> {
+                    if (apiArticles.size() > 0)
+                        if (articlesMap.containsKey(apiArticles.get(0).getSource().getId())) {
+
+                            articlesMap.put(apiArticles.get(0).getSource().getId(), apiArticles);
+                        } else {
+                            articlesMap.put(apiArticles.get(0).getSource().getId(), apiArticles);
+                        }
+                });
+
         setAdaptersData(articlesMap);
     }
 
+
     private void setAdaptersData(HashMap map) {
-        this.mHomeView.setSwipeRefreshing(false);
-        this.mHomeView.setAdapterDate(map);
+        mHomeView.setSwipeRefreshing(false);
+        mHomeView.setAdapterDate(map);
     }
 
     @Inject
@@ -81,7 +93,7 @@ public class HomePresenter implements Presenter {
     }
 
     public void onArticleClicked(ApiArticle apiArticle) {
-        this.mHomeView.navigateToArticleDetails(apiArticle);
+        mHomeView.navigateToArticleDetails(apiArticle);
     }
 
     @Override
@@ -121,9 +133,9 @@ public class HomePresenter implements Presenter {
         List<String> selected = new ArrayList<>();
         for (NewsProvider provider : mHomeView.getSelectedNewsSourced()) {
             selected.add(provider.getId());
-            defRes.addAll(selected);
-            getArticleFromSourcse(selected);
         }
+        defRes.addAll(selected);
+        getArticleFromSourcse(selected);
 
         mHomeView.showCategoryList(false);
         mHomeView.showCategorySources(false);
@@ -132,31 +144,78 @@ public class HomePresenter implements Presenter {
     }
 
     private void getArticleFromSourcse(List<String> defRes) {
+
         mDisposable.add(mHomeData.getArticlesList(defRes)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(apiArticles -> {
-                    Log.i("articles", apiArticles.size() + "");
-                    classifyArticles(apiArticles);
+                    if (mHomeView.isActive()) {
+                        Log.i("articles", apiArticles.size() + "");
+                        // classifyArticles(apiArticles);
+                        classifyArticles(apiArticles);
+                    }
+
                 }, throwable -> {
 
                 }));
     }
 
     private void getSourcesList(CategoryType type) {
-
         mDisposable.add(mHomeData.getCategoryProviders(type)
                 .flatMapIterable(providers -> providers)
                 .filter(newsProvider -> !defRes.contains(newsProvider.getId()))
                 .toList()
                 .subscribe(providers -> {
-
-                    mHomeView.setCategorySourceList(providers, type);
-                    mHomeView.showCategoryList(false);
-                    mHomeView.showCategorySources(true);
-                    Log.i("tstProv", "" + providers.size());
+                    if (mHomeView.isActive()) {
+                        mHomeView.setCategorySourceList(providers, type);
+                        mHomeView.showCategoryList(false);
+                        mHomeView.showCategorySources(true);
+                    }
                 }, throwable -> {
-                    Log.i("tstProvErr", throwable.toString());
                 }));
     }
+
+    private void counter() {
+        Completable.timer(20, TimeUnit.SECONDS)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new CompletableObserver() {
+                    @Override
+                    public void onSubscribe(Disposable d) {
+
+                    }
+
+                    @Override
+                    public void onComplete() {
+                        getArticles();
+                        counter();
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+
+                    }
+                });
+    }
 }
+
+/*
+    private void classifyArticles(List<ApiArticle> list) {
+        for (ApiArticle apiArticle : list) {
+            if (apiArticle.getUrl() != null) {
+                if (!(apiArticle.getSource() == null || apiArticle.getSource().getId() == null)) {
+                    if (articlesMap.containsKey(apiArticle.getSource().getId())) {
+                        articlesMap.get(apiArticle.getSource().getId()).add(apiArticle);
+
+                    } else {
+                        articlesMap.put(apiArticle.getSource().getId(), new ArrayList<>());
+                        articlesMap.get(apiArticle.getSource().getId()).add(apiArticle);
+                    }
+                }
+            }
+
+        }
+        setAdaptersData(articlesMap);
+    }
+
+ */
