@@ -1,7 +1,10 @@
 package co.myahia.rssreader.features.home;
 
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Point;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -25,11 +28,14 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import co.myahia.rssreader.R;
+import co.myahia.rssreader.data.local.ArticleDao;
+import co.myahia.rssreader.data.local.LocalDatabase;
 import co.myahia.rssreader.data.remote.model.ApiArticle;
 import co.myahia.rssreader.data.remote.model.NewsProvider;
 import co.myahia.rssreader.data.remote.model.enumes.CategoryType;
 import co.myahia.rssreader.features.detail.DetailsActivity;
 import co.myahia.rssreader.features.home.HomeContract.Presenter;
+import io.reactivex.Observable;
 
 public class HomeFragment extends Fragment implements HomeContract.View,
         OnRefreshListener,
@@ -234,6 +240,11 @@ public class HomeFragment extends Fragment implements HomeContract.View,
         return sourcesAdapter.getSelectedPositions();
     }
 
+    @Override
+    public Context getViewContext() {
+        return getContext();
+    }
+
     public void navigateToArticleDetails(ApiArticle article) {
         Intent intent = new Intent(getContext(), DetailsActivity.class);
         intent.putExtra("apiArticle", article);
@@ -261,7 +272,6 @@ public class HomeFragment extends Fragment implements HomeContract.View,
     }
 
     private void swipeTop(ViewGroup viewGroup){
-
     }
     private void swipeBottom(){
 
@@ -291,4 +301,8 @@ public class HomeFragment extends Fragment implements HomeContract.View,
 
         }
     }
+
+
+
+
 }

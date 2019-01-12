@@ -1,10 +1,13 @@
 package co.myahia.rssreader.features;
 
+import javax.inject.Singleton;
+
+import co.myahia.rssreader.data.local.ArticleDao;
+import co.myahia.rssreader.data.local.LocalDatabase;
 import co.myahia.rssreader.data.manager.DataManager;
 import co.myahia.rssreader.data.remote.RSSApi;
 import dagger.Module;
 import dagger.Provides;
-import javax.inject.Singleton;
 
 @Module
 public class AppModule {
@@ -22,7 +25,19 @@ public class AppModule {
 
     @Singleton
     @Provides
-    public DataManager providesDataManager(RSSApi api) {
-        return new DataManager(api);
+    public DataManager providesDataManager(RSSApi api, ArticleDao articleDao) {
+        return new DataManager(api, articleDao);
+    }
+
+    @Singleton
+    @Provides
+    public LocalDatabase providesLocalDatabase(RSSApp rssApp) {
+        return LocalDatabase.getInstance(rssApp.getApplicationContext());
+    }
+
+    @Singleton
+    @Provides
+    public ArticleDao providesArticleDeo(LocalDatabase localDatabase) {
+        return localDatabase.getArticleDao();
     }
 }

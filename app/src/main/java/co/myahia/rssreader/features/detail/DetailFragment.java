@@ -76,6 +76,7 @@ public class DetailFragment extends Fragment implements DetailContract.View {
         webView.getSettings().setLoadWithOverviewMode(true);
         webView.getSettings().setUseWideViewPort(true);
         webView.getSettings().setJavaScriptEnabled(true);
+
         webView.getSettings().setPluginState(PluginState.ON);
         webView.getSettings().setAllowFileAccess(true);
         webView.setWebViewClient(new WebViewClient() {

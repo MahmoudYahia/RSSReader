@@ -41,7 +41,6 @@ public class HomePresenter implements Presenter {
         defRes = new ArrayList<>();
         mDisposable = new CompositeDisposable();
         this.defRes.add("bbc-news");
-        this.defRes.add("techcrunch");
         this.defRes.add("mashable");
         this.defRes.add("cnn");
     }
@@ -51,10 +50,11 @@ public class HomePresenter implements Presenter {
             getArticles();
             counter();
         }
+
     }
 
     private void getArticles() {
-        getArticleFromSourcse(defRes);
+        getArticleFromSources(defRes);
     }
 
 
@@ -135,7 +135,7 @@ public class HomePresenter implements Presenter {
             selected.add(provider.getId());
         }
         defRes.addAll(selected);
-        getArticleFromSourcse(selected);
+        getArticleFromSources(selected);
 
         mHomeView.showCategoryList(false);
         mHomeView.showCategorySources(false);
@@ -143,9 +143,9 @@ public class HomePresenter implements Presenter {
 
     }
 
-    private void getArticleFromSourcse(List<String> defRes) {
+    private void getArticleFromSources(List<String> defRes) {
 
-        mDisposable.add(mHomeData.getArticlesList(defRes)
+        mDisposable.add(mHomeData.getArticlesList(defRes, mHomeView.getViewContext())
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(apiArticles -> {
@@ -156,8 +156,9 @@ public class HomePresenter implements Presenter {
                     }
 
                 }, throwable -> {
-
+                    Log.i("articles", throwable.toString());
                 }));
+
     }
 
     private void getSourcesList(CategoryType type) {
@@ -176,7 +177,7 @@ public class HomePresenter implements Presenter {
     }
 
     private void counter() {
-        Completable.timer(20, TimeUnit.SECONDS)
+        Completable.timer(10, TimeUnit.MINUTES)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new CompletableObserver() {

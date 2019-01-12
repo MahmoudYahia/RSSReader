@@ -12,6 +12,14 @@ public class Source implements Serializable {
     @Expose
     private String name;
 
+    public Source() {
+    }
+
+    public Source(String id, String name) {
+        this.id = id;
+        this.name = name;
+    }
+
     public String getId() {
         return this.id;
     }
