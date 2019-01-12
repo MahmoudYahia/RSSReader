@@ -5,14 +5,13 @@ import android.content.Context;
 import java.util.HashMap;
 import java.util.List;
 
-import co.myahia.rssreader.data.local.ArticleDB;
 import co.myahia.rssreader.data.local.SourceDB;
 import co.myahia.rssreader.data.remote.model.ApiArticle;
 import co.myahia.rssreader.data.remote.model.NewsProvider;
+import co.myahia.rssreader.data.remote.model.Source;
 import co.myahia.rssreader.data.remote.model.enumes.CategoryType;
 import co.myahia.rssreader.utils.BaseContract;
 import io.reactivex.Observable;
-import io.reactivex.Single;
 
 public interface HomeContract {
     public interface View extends BaseContract.View<Presenter> {
@@ -58,15 +57,17 @@ public interface HomeContract {
 
     public interface Data {
 
-        Observable<List<ApiArticle>> getArticlesList(List<String> res, Context context);
+        Observable<List<ApiArticle>> getArticlesList( Context context);
 
         Observable<List<NewsProvider>> getCategoryProviders(CategoryType type);
 
-        Observable<List<ArticleDB>> getArticlesFromDB();
 
         Observable<List<SourceDB>> getSourcesIDList();
 
         void removeSourceFromDB(String sourceID);
+
+        void insertSourcesIntoDB(List<Source> sources);
+
     }
 
 }

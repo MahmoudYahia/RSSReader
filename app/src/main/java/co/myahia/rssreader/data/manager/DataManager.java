@@ -39,26 +39,36 @@ public class DataManager implements HomeContract.Data {
 
     private void checkDefaults() {
         getSourcesIDList().subscribe(list -> {
-            if (list.size() == 0) insertDefaultsSourcse();
+            if (list.size() == 0) insertDefaultsSources();
         });
     }
 
-    @Override
-    public Observable<List<ApiArticle>> getArticlesList(List<String> defRes, Context context) {
-        //  Log.i("isInternet", isInternetAvailable() + "");
+    private void getProvidersId(Context context) {
+        getSourcesIDList().flatMapIterable(list -> list)
+                .map(sourceDB -> sourceDB.getSourceID())
+                .doOnNext(this::deleteBySourceFromDB)
+                .flatMap(s -> mRssApi.getArticles(API_KEY, s).map(GetArticlesResponse::getApiArticles))
+                .doOnNext(this::saveArticlesIntoLocalDB);
 
+    }
+    @Override
+    public Observable<List<ApiArticle>> getArticlesList( Context context) {
+        //  Log.i("isInternet", isInternetAvailable() + "");
         if (isInternetOn(context))
-            return Observable.just(defRes)
+            return getSourcesIDList()
                     .flatMapIterable(list -> list)
+                    .map(sourceDB -> sourceDB.getSourceID())
+                    .doOnNext(s -> Log.i("eerrhON", s))
                     .doOnNext(this::deleteBySourceFromDB)
                     .flatMap(s -> mRssApi.getArticles(API_KEY, s).map(GetArticlesResponse::getApiArticles))
                     .doOnNext(this::saveArticlesIntoLocalDB);
         else {
-            return Observable.just(defRes)
-                    .subscribeOn(Schedulers.io())
+            return getSourcesIDList()
                     .flatMapIterable(list -> list)
-                    .map(s -> mArticleDao.getArticlesBySource(s)).map(this::transfromLocalToApi);
-            //  return getArticlesFromDB().map(list -> transfromLocalToApi(list));
+                    .map(sourceDB -> sourceDB.getSourceID())
+                    .doOnNext(s -> Log.i("eerrhLO", s))
+                    .map(s -> mArticleDao.getArticlesBySource(s)).map(this::transformLocalToApi);
+            //  return getArticlesFromDB().map(list -> transformLocalToApi(list));
         }
     }
 
@@ -78,12 +88,11 @@ public class DataManager implements HomeContract.Data {
 
     }
 
-    @Override
-    public Observable<List<ArticleDB>> getArticlesFromDB() {
-        return Observable.just(mArticleDao)
-                .subscribeOn(Schedulers.io())
-                .map(articleDao -> articleDao.getArticlesList());
-    }
+//    private Observable<List<ArticleDB>> getArticlesFromDB() {
+//        return Observable.just(mArticleDao)
+//                .subscribeOn(Schedulers.io())
+//                .map(articleDao -> articleDao.getArticlesList());
+//    }
 
     @Override
     public Observable<List<SourceDB>> getSourcesIDList() {
@@ -96,6 +105,11 @@ public class DataManager implements HomeContract.Data {
     @Override
     public void removeSourceFromDB(String sourceID) {
         deleteBySourceFromDB(sourceID);
+    }
+
+    @Override
+    public void insertSourcesIntoDB(List<Source> sources) {
+        insertNewsSourcesDB(transformApiSourceToLocal(sources));
     }
 
     private void deleteBySourceFromDB(String sourceID) {
@@ -112,6 +126,34 @@ public class DataManager implements HomeContract.Data {
                 .subscribe(list1 -> mArticleDao.insertAll(transformArticleObjects(list1)));
     }
 
+
+    private void insertDefaultsSources() {
+
+        List<SourceDB> sourceDBS = new ArrayList<>();
+        SourceDB sourceDB1 = new SourceDB();
+        sourceDB1.setSourceID("bbc-news");
+        sourceDB1.setSourceName("BBC NEWS");
+
+        SourceDB sourceDB2 = new SourceDB();
+        sourceDB2.setSourceID("mashable");
+        sourceDB2.setSourceName("MASHABLE");
+
+        SourceDB sourceDB3 = new SourceDB();
+        sourceDB3.setSourceID("cnn");
+        sourceDB3.setSourceName("CNN");
+
+        sourceDBS.add(sourceDB1);
+        sourceDBS.add(sourceDB2);
+        sourceDBS.add(sourceDB3);
+
+        insertNewsSourcesDB(sourceDBS);
+    }
+
+    private void insertNewsSourcesDB(List<SourceDB> sourceDBS) {
+        Observable.just(sourceDBS)
+                .subscribeOn(Schedulers.io())
+                .subscribe(articleDao -> mArticleDao.insertSources(sourceDBS));
+    }
 
     private List<ArticleDB> transformArticleObjects(List<ApiArticle> apiArticles) {
 
@@ -134,7 +176,7 @@ public class DataManager implements HomeContract.Data {
         return articleDBS;
     }
 
-    private List<ApiArticle> transfromLocalToApi(List<ArticleDB> list) {
+    private List<ApiArticle> transformLocalToApi(List<ArticleDB> list) {
         List<ApiArticle> apiArticles = new ArrayList<>();
 
         for (ArticleDB articleDB : list) {
@@ -153,29 +195,17 @@ public class DataManager implements HomeContract.Data {
         return apiArticles;
     }
 
-    private void insertDefaultsSourcse() {
-
-        List<SourceDB> sourceDBS = new ArrayList<>();
-        SourceDB sourceDB1 = new SourceDB();
-        sourceDB1.setSourceID("bbc-news");
-        sourceDB1.setSourceName("BBC NEWS");
-
-        SourceDB sourceDB2 = new SourceDB();
-        sourceDB1.setSourceID("mashable");
-        sourceDB1.setSourceName("MASHABLE");
-
-        SourceDB sourceDB3 = new SourceDB();
-        sourceDB1.setSourceID("cnn");
-        sourceDB1.setSourceName("CNN");
-
-        sourceDBS.add(sourceDB1);
-        sourceDBS.add(sourceDB2);
-        sourceDBS.add(sourceDB3);
-
-        Observable.just(sourceDBS)
-                .subscribeOn(Schedulers.io())
-                .subscribe(articleDao -> mArticleDao.insertSources(sourceDBS));
+    private List<SourceDB> transformApiSourceToLocal(List<Source> list) {
+        List<SourceDB> sourceDBList = new ArrayList<>();
+        for (Source source : list) {
+            SourceDB sourceDB = new SourceDB();
+            sourceDB.setSourceID(source.getId());
+            sourceDB.setSourceName(source.getName());
+            sourceDBList.add(sourceDB);
+        }
+        return sourceDBList;
     }
+
 
     public boolean isInternetOn(Context context) {
         ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);

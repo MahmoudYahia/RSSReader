@@ -11,6 +11,7 @@ import javax.inject.Inject;
 
 import co.myahia.rssreader.data.remote.model.ApiArticle;
 import co.myahia.rssreader.data.remote.model.NewsProvider;
+import co.myahia.rssreader.data.remote.model.Source;
 import co.myahia.rssreader.data.remote.model.enumes.CategoryType;
 import co.myahia.rssreader.features.home.HomeContract.Presenter;
 import co.myahia.rssreader.features.home.HomeContract.View;
@@ -24,7 +25,6 @@ import io.reactivex.schedulers.Schedulers;
 
 public class HomePresenter implements Presenter {
     private HashMap<String, List<ApiArticle>> articlesMap;
-    private HashMap<String, List<ApiArticle>> tempArticles;
     private List<String> defRes;
     private HomeContract.Data mHomeData;
 
@@ -37,7 +37,6 @@ public class HomePresenter implements Presenter {
         mHomeView = view;
         mHomeData = data;
         articlesMap = new HashMap<>();
-       // tempArticles = new HashMap<>();
         defRes = new ArrayList<>();
         mDisposable = new CompositeDisposable();
         this.defRes.add("bbc-news");
@@ -54,7 +53,7 @@ public class HomePresenter implements Presenter {
     }
 
     private void getArticles() {
-        getArticleFromSources(defRes);
+        getArticleFromSources();
     }
 
 
@@ -102,9 +101,10 @@ public class HomePresenter implements Presenter {
         mHomeView.showCategoryList(true);
     }
 
-    public void onRemoveProvider(int pos, String articleID) {
-        if (defRes.remove(articleID)) {
-            articlesMap.remove(articleID);
+    public void onRemoveProvider(int pos, String providerID) {
+        if (defRes.remove(providerID)) {
+            articlesMap.remove(providerID);
+            mHomeData.removeSourceFromDB(providerID);
         }
     }
 
@@ -130,12 +130,17 @@ public class HomePresenter implements Presenter {
     @Override
     public void onSourcesOkBtnClicked() {
 
-        List<String> selected = new ArrayList<>();
+        List<Source> selected = new ArrayList<>();
         for (NewsProvider provider : mHomeView.getSelectedNewsSourced()) {
-            selected.add(provider.getId());
+            Source source=new Source();
+            source.setId(provider.getId());
+            source.setName(provider.getName());
+            selected.add(source);
         }
-        defRes.addAll(selected);
-        getArticleFromSources(selected);
+      //  defRes.addAll(selected);
+       // getArticleFromSources(selected);
+        mHomeData.insertSourcesIntoDB(selected);
+        getArticleFromSources();
 
         mHomeView.showCategoryList(false);
         mHomeView.showCategorySources(false);
@@ -143,9 +148,9 @@ public class HomePresenter implements Presenter {
 
     }
 
-    private void getArticleFromSources(List<String> defRes) {
+    private void getArticleFromSources() {
 
-        mDisposable.add(mHomeData.getArticlesList(defRes, mHomeView.getViewContext())
+        mDisposable.add(mHomeData.getArticlesList(mHomeView.getViewContext())
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(apiArticles -> {
