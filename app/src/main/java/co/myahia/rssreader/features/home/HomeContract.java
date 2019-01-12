@@ -52,6 +52,7 @@ public interface HomeContract {
 
         void onSourcesOkBtnClicked();
 
+        void onSourcesBackClicked();
 
     }
 

@@ -148,6 +148,13 @@ public class HomePresenter implements Presenter {
 
     }
 
+    @Override
+    public void onSourcesBackClicked() {
+        mHomeView.showCategoryList(true);
+        mHomeView.showCategorySources(false);
+
+    }
+
     private void getArticleFromSources() {
 
         mDisposable.add(mHomeData.getArticlesList(mHomeView.getViewContext())
