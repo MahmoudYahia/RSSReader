@@ -265,7 +265,7 @@ public class HomeFragment extends Fragment implements HomeContract.View,
     }
 
     public void onRemoveProviderClicked(int pos, String providerID) {
-        this.mPresenter.onRemoveProvider(pos, providerID);
+        mPresenter.onRemoveProvider(pos, providerID);
     }
 
     public void onRefresh() {

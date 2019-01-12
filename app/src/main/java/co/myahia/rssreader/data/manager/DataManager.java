@@ -22,6 +22,7 @@ import co.myahia.rssreader.data.remote.response.GetArticlesResponse;
 import co.myahia.rssreader.features.home.HomeContract;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.schedulers.Schedulers;
 
 public class DataManager implements HomeContract.Data {
@@ -29,11 +30,13 @@ public class DataManager implements HomeContract.Data {
     private RSSApi mRssApi;
     private String lang = "en";
     private ArticleDao mArticleDao;
+    CompositeDisposable compositeDisposable;
 
     @Inject
     public DataManager(RSSApi rssApi, ArticleDao articleDao) {
         this.mRssApi = rssApi;
         this.mArticleDao = articleDao;
+        compositeDisposable = new CompositeDisposable();
         checkDefaults();
     }
 
@@ -43,14 +46,6 @@ public class DataManager implements HomeContract.Data {
         });
     }
 
-    private void getProvidersId(Context context) {
-        getSourcesIDList().flatMapIterable(list -> list)
-                .map(sourceDB -> sourceDB.getSourceID())
-                .doOnNext(this::deleteBySourceFromDB)
-                .flatMap(s -> mRssApi.getArticles(API_KEY, s).map(GetArticlesResponse::getApiArticles))
-                .doOnNext(this::saveArticlesIntoLocalDB);
-
-    }
     @Override
     public Observable<List<ApiArticle>> getArticlesList( Context context) {
         //  Log.i("isInternet", isInternetAvailable() + "");
@@ -58,26 +53,24 @@ public class DataManager implements HomeContract.Data {
             return getSourcesIDList()
                     .flatMapIterable(list -> list)
                     .map(sourceDB -> sourceDB.getSourceID())
-                    .doOnNext(s -> Log.i("eerrhON", s))
-                    .doOnNext(this::deleteBySourceFromDB)
+                    .doOnNext(this::removeArticlesFromDB)
                     .flatMap(s -> mRssApi.getArticles(API_KEY, s).map(GetArticlesResponse::getApiArticles))
                     .doOnNext(this::saveArticlesIntoLocalDB);
         else {
             return getSourcesIDList()
                     .flatMapIterable(list -> list)
                     .map(sourceDB -> sourceDB.getSourceID())
-                    .doOnNext(s -> Log.i("eerrhLO", s))
                     .map(s -> mArticleDao.getArticlesBySource(s)).map(this::transformLocalToApi);
-            //  return getArticlesFromDB().map(list -> transformLocalToApi(list));
         }
     }
 
 
-//    @Override
-//    public Observable<List<ApiArticle>> getArticlesList(List<String> res) {
-//        return null;
-//    }
+    private void removeArticlesFromDB(String sourceID) {
+        compositeDisposable.add(Observable.just(sourceID)
+                .subscribeOn(Schedulers.io())
+                .subscribe(s -> mArticleDao.deleteArticlesBySourceId(s)));
 
+    }
     @Override
     public Observable<List<NewsProvider>> getCategoryProviders(CategoryType type) {
 
@@ -86,13 +79,8 @@ public class DataManager implements HomeContract.Data {
                 .observeOn(AndroidSchedulers.mainThread())
                 .map(resp -> resp.getSourcesProvider());
 
-    }
 
-//    private Observable<List<ArticleDB>> getArticlesFromDB() {
-//        return Observable.just(mArticleDao)
-//                .subscribeOn(Schedulers.io())
-//                .map(articleDao -> articleDao.getArticlesList());
-//    }
+    }
 
     @Override
     public Observable<List<SourceDB>> getSourcesIDList() {
@@ -104,7 +92,7 @@ public class DataManager implements HomeContract.Data {
 
     @Override
     public void removeSourceFromDB(String sourceID) {
-        deleteBySourceFromDB(sourceID);
+        deleteSourceFromDB(sourceID);
     }
 
     @Override
@@ -112,20 +100,18 @@ public class DataManager implements HomeContract.Data {
         insertNewsSourcesDB(transformApiSourceToLocal(sources));
     }
 
-    private void deleteBySourceFromDB(String sourceID) {
-        Observable.just(sourceID)
+    private void deleteSourceFromDB(String sourceID) {
+        compositeDisposable.add(Observable.just(sourceID)
                 .subscribeOn(Schedulers.io())
-                .subscribe(s -> mArticleDao.deleteBySourceId(s));
+                .subscribe(s -> mArticleDao.deleteSourceFromSources(s)));
 
     }
 
     private void saveArticlesIntoLocalDB(List<ApiArticle> list) {
-        Log.i("klll", "" + list.size());
-        Observable.just(list)
+        compositeDisposable.add(Observable.just(list)
                 .subscribeOn(Schedulers.io())
-                .subscribe(list1 -> mArticleDao.insertAll(transformArticleObjects(list1)));
+                .subscribe(list1 -> mArticleDao.insertAll(transformArticleObjects(list1))));
     }
-
 
     private void insertDefaultsSources() {
 
@@ -150,9 +136,9 @@ public class DataManager implements HomeContract.Data {
     }
 
     private void insertNewsSourcesDB(List<SourceDB> sourceDBS) {
-        Observable.just(sourceDBS)
+        compositeDisposable.add(Observable.just(sourceDBS)
                 .subscribeOn(Schedulers.io())
-                .subscribe(articleDao -> mArticleDao.insertSources(sourceDBS));
+                .subscribe(articleDao -> mArticleDao.insertSources(sourceDBS)));
     }
 
     private List<ArticleDB> transformArticleObjects(List<ApiArticle> apiArticles) {
@@ -211,6 +197,7 @@ public class DataManager implements HomeContract.Data {
         ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
         return activeNetworkInfo != null && activeNetworkInfo.isConnected();
+
     }
 
 

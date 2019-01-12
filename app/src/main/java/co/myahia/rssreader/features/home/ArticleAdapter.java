@@ -1,8 +1,6 @@
 package co.myahia.rssreader.features.home;
 
-import android.support.annotation.CallSuper;
 import android.support.annotation.NonNull;
-import android.support.annotation.UiThread;
 import android.support.v7.widget.RecyclerView.Adapter;
 import android.support.v7.widget.RecyclerView.ViewHolder;
 import android.view.LayoutInflater;
@@ -12,8 +10,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import butterknife.Unbinder;
-import butterknife.internal.Utils;
+
 import co.myahia.rssreader.R;
 import co.myahia.rssreader.data.remote.model.ApiArticle;
 import com.squareup.picasso.Picasso;

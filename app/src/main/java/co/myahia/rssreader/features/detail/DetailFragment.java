@@ -15,6 +15,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.squareup.picasso.Picasso;
 
@@ -143,7 +144,7 @@ public class DetailFragment extends Fragment implements DetailContract.View {
                     intent.putExtra(Intent.EXTRA_TEXT, url);
                     startActivity(intent);
                 } catch (PackageManager.NameNotFoundException e) {
-                    // Pocket app not installed
+                    Toast.makeText(getContext(), "Ohh Sorry ,GetPocket App not installed", Toast.LENGTH_LONG).show();
                 }
             }
     }
@@ -192,7 +193,7 @@ public class DetailFragment extends Fragment implements DetailContract.View {
     }
 
     @OnClick(R.id.share_pocket_btn)
-    public void onSharePockeetClicked(){
+    public void onSharePocketClicked(){
         mPresenter.onSharePocketClicked();
     }
 

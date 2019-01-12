@@ -1,7 +1,5 @@
 package co.myahia.rssreader.features.home;
 
-import android.util.Log;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -39,11 +37,16 @@ public class HomePresenter implements Presenter {
         articlesMap = new HashMap<>();
         defRes = new ArrayList<>();
         mDisposable = new CompositeDisposable();
-        this.defRes.add("bbc-news");
-        this.defRes.add("mashable");
-        this.defRes.add("cnn");
+        getSourcesListIds();
     }
 
+    private void getSourcesListIds() {
+        mDisposable.add(mHomeData.getSourcesIDList()
+                .flatMapIterable(list -> list)
+                .map(sourceDB -> defRes.add(sourceDB.getSourceID()))
+                .subscribe());
+
+    }
     public void onStart() {
         if (articlesMap.size() == 0) {
             getArticles();
@@ -63,7 +66,7 @@ public class HomePresenter implements Presenter {
 
 
     private void classifyArticles(List<ApiArticle> list) {
-        Observable.just(list)
+        mDisposable.add(Observable.just(list)
                 .flatMapIterable(apiArticles -> apiArticles)
                 .filter(apiArticle -> apiArticle.getSource().getId() != null)
                 .toList()
@@ -75,7 +78,7 @@ public class HomePresenter implements Presenter {
                         } else {
                             articlesMap.put(apiArticles.get(0).getSource().getId(), apiArticles);
                         }
-                });
+                }));
 
         setAdaptersData(articlesMap);
     }
@@ -102,10 +105,8 @@ public class HomePresenter implements Presenter {
     }
 
     public void onRemoveProvider(int pos, String providerID) {
-        if (defRes.remove(providerID)) {
-            articlesMap.remove(providerID);
-            mHomeData.removeSourceFromDB(providerID);
-        }
+        articlesMap.remove(providerID);
+        mHomeData.removeSourceFromDB(providerID);
     }
 
     public void onSwipeToRefresh() {
@@ -137,13 +138,11 @@ public class HomePresenter implements Presenter {
             source.setName(provider.getName());
             selected.add(source);
         }
-      //  defRes.addAll(selected);
-       // getArticleFromSources(selected);
         mHomeData.insertSourcesIntoDB(selected);
-        getArticleFromSources();
+        onSwipeToRefresh();
 
-        mHomeView.showCategoryList(false);
         mHomeView.showCategorySources(false);
+        mHomeView.showCategoryList(false);
         mHomeView.showTopHeadlinesLayout(true);
 
     }
@@ -162,16 +161,15 @@ public class HomePresenter implements Presenter {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(apiArticles -> {
                     if (mHomeView.isActive()) {
-                        Log.i("articles", apiArticles.size() + "");
                         // classifyArticles(apiArticles);
                         classifyArticles(apiArticles);
                     }
 
                 }, throwable -> {
-                    Log.i("articles", throwable.toString());
                 }));
 
     }
+
 
     private void getSourcesList(CategoryType type) {
         mDisposable.add(mHomeData.getCategoryProviders(type)
@@ -186,6 +184,24 @@ public class HomePresenter implements Presenter {
                     }
                 }, throwable -> {
                 }));
+    }
+
+    private void filterRepeatedSources(List<NewsProvider> newsProviders, CategoryType type) {
+        ArrayList<NewsProvider> filtedList = new ArrayList<>();
+        mDisposable.add(mHomeData.getSourcesIDList()
+                .flatMapIterable(list -> list)
+                .subscribe(sourcesDB -> {
+                    for (NewsProvider newsProvider : newsProviders) {
+                        if (!newsProvider.getId().equals(sourcesDB.getSourceID()))
+                            filtedList.add(newsProvider);
+                    }
+                    setNewsProvidersList(filtedList, type);
+                }));
+
+    }
+
+    private void setNewsProvidersList(ArrayList<NewsProvider> list, CategoryType type) {
+
     }
 
     private void counter() {
@@ -211,24 +227,3 @@ public class HomePresenter implements Presenter {
                 });
     }
 }
-
-/*
-    private void classifyArticles(List<ApiArticle> list) {
-        for (ApiArticle apiArticle : list) {
-            if (apiArticle.getUrl() != null) {
-                if (!(apiArticle.getSource() == null || apiArticle.getSource().getId() == null)) {
-                    if (articlesMap.containsKey(apiArticle.getSource().getId())) {
-                        articlesMap.get(apiArticle.getSource().getId()).add(apiArticle);
-
-                    } else {
-                        articlesMap.put(apiArticle.getSource().getId(), new ArrayList<>());
-                        articlesMap.get(apiArticle.getSource().getId()).add(apiArticle);
-                    }
-                }
-            }
-
-        }
-        setAdaptersData(articlesMap);
-    }
-
- */

@@ -5,6 +5,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.RecyclerView.Adapter;
 import android.support.v7.widget.RecyclerView.ViewHolder;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -66,8 +67,7 @@ public class ProviderAdapter extends Adapter<ProviderAdapter.ProviderViewHolder>
         holder.articlesRecycler.setAdapter(articleAdapter);
         holder.articlesRecycler.setLayoutManager(new LinearLayoutManager(holder.itemView.getContext(), 0, false));
         holder.providerName.setText(providerNames.get(holder.getAdapterPosition()).toUpperCase());
-        holder.removeBtn.setOnClickListener(v -> {
-            removeItemFromList(holder.getAdapterPosition());
+        holder.removeBtn.setOnClickListener(v -> { removeItemFromList(holder.getAdapterPosition());
         });
     }
 
